@@ -1,0 +1,394 @@
+# Import the pygame module
+import pygame
+# Import pygame.locals for easier access to key coordinates
+# Updated to conform to flake8 and black standards
+
+# Import random for random numbers
+import random
+
+from pygame.locals import (
+	K_UP,
+	K_DOWN,
+	K_LEFT,
+	K_RIGHT,
+	K_ESCAPE,
+	K_SPACE,
+	K_a,
+	KEYDOWN,
+	QUIT,
+)
+
+# Define constants for the screen width and height
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+pygame.font.init()
+retro = pygame.font.Font("G7StarForce.ttf", 20)
+retrotitle = pygame.font.Font("G7StarForce.ttf", 40)
+retrosmall = pygame.font.Font("G7StarForce.ttf", 15)
+# Define the enemy object by extending pygame.sprite.Sprite
+	
+	# The surface you draw on the screen is now an attribute of 'enemy'
+	
+class Enemy(pygame.sprite.Sprite):
+	def __init__(self):
+		super(Enemy, self).__init__()
+		self.worth = 0
+		if player.level < 5:
+			self.speed = random.randint(5 + player.level, 20) 
+		elif player.level >= 5:
+			self.speed = random.randint(5 + player.level, 28) 
+
+		if self.speed < 12:
+			self.image = pygame.image.load("enemy.png")
+			self.worth = 50
+		elif self.speed >= 12 and self.speed < 20:
+			self.image = pygame.image.load("enemy2.png")
+			self.worth = 100
+		else:
+			self.image = pygame.image.load("enemy3.png")
+			self.worth = 150
+		#self.surf = pygame.Surface((28, 20))
+		self.rect = self.image.get_rect(
+			center=(
+				random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
+				random.randint(0, SCREEN_HEIGHT),
+			)
+		)	
+		
+	# Move the sprite based on speed
+	# Remove the sprite when it passes the left edge of the screen
+	def update(self):	
+		self.rect.move_ip(-self.speed, 0)
+		if self.rect.right < 0:	
+			self.kill()
+			
+		
+class Shot(pygame.sprite.Sprite):
+	def __init__(self, x, y):
+		super(Shot, self).__init__()
+		self.speed = 10
+		self.image = pygame.image.load("lazer.png")
+		self.rect = self.image.get_rect(
+			center=(
+				x,
+				y,
+			)
+		)
+	
+	def update(self):	
+		self.rect.move_ip(self.speed, 0)
+		if self.rect.left > SCREEN_WIDTH:	
+			self.kill()	
+class popUp(pygame.sprite.Sprite):
+	def __init__(self, message, x, y):
+		super(popUp, self).__init__()
+		self.timer = 0
+		self.x = x
+		self.y = y
+		self.message = message
+		self.textimage = retrosmall.render(self.message, False, (255,255,255))
+		self.rect = self.textimage.get_rect(
+			center=(
+				self.x,
+				self.y,
+			)
+		)	
+	def update(self):
+		
+		self.timer += 1
+		if self.timer > 10:
+			self.kill()
+		
+		
+class powerUp(pygame.sprite.Sprite):
+	def __init__(self):
+		super(powerUp, self).__init__()
+		self.speed = random.randint(15, 25)
+		self.type = random.randint(1, 2)
+		if self.type == 1:
+			self.image = pygame.image.load("heart.png")
+		elif self.type == 2:
+			self.image = pygame.image.load("energy.png")
+		self.rect = self.image.get_rect(
+			center=(
+				random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
+				random.randint(0, SCREEN_HEIGHT),
+			)
+		)
+		
+	def update(self):	
+		self.rect.move_ip(-self.speed, 0)
+		if self.rect.right < 0:	
+			self.kill()
+		
+# Define a Player object by extending pygame.sprite.Sprite	
+# The surface drawn on the screen is now an attribute of 'player'	
+class Player(pygame.sprite.Sprite):
+
+	def __init__(self):
+		super(Player, self).__init__()	
+		
+		self.image = pygame.image.load("player.png")
+		self.rect = self.image.get_rect()
+		self.lives = 3
+		self.frame = 1
+		self.hurt = False
+		self.energy = 100
+		self.Score = 0
+		self.level = 0
+		self.phaze = 0
+		self.hiScore = 0
+	# Move the sprite based on user keypresses
+	def update(self, pressed_keys):
+		
+		if pressed_keys[K_UP]:
+			self.rect.move_ip(0, -5)
+		if pressed_keys[K_DOWN]:
+			self.rect.move_ip(0, 5)
+		if pressed_keys[K_LEFT]:
+			self.rect.move_ip(-5, 0)
+		if pressed_keys[K_RIGHT]:
+			self.rect.move_ip(5, 0)
+		if self.energy >= 30 and self.energy < 100:
+			self.energy+=0.5
+		elif self.energy < 100:
+			self.energy+= 0.25
+		
+
+		# Keep player on the screen
+		if self.rect.left < 0:	
+			self.rect.left = 0
+		if self.rect.right > SCREEN_WIDTH:
+			self.rect.right = SCREEN_WIDTH
+		if self.rect.top <= 0:
+			self.rect.top = 0
+		if self.rect.bottom >= SCREEN_HEIGHT:
+			self.rect.bottom = SCREEN_HEIGHT
+	# lives
+	def animatePlayer(self):
+		if not self.hurt:
+			if self.frame > 6:
+				self.frame = 1
+			if self.frame == 1:
+				self.image = pygame.image.load("playerFire1.png")
+			elif self.frame == 3:
+				self.image = pygame.image.load("playerFire2.png")
+			elif self.frame == 5:
+				self.image = pygame.image.load("playerFire3.png")
+		else:
+			if self.frame > 6:
+				self.frame = 1
+			if self.frame == 1:
+				self.image = pygame.image.load("playerHitFire1.png")
+			elif self.frame == 3:
+				self.image = pygame.image.load("playerHitFire2.png")
+			elif self.frame == 5:
+				self.image = pygame.image.load("playerHitFire3.png")
+		self.frame+=1
+	
+	
+	def die(self):
+		
+		
+		if self.lives != 0:
+			
+			self.lives = self.lives - 1
+			
+
+# Initialize pygame
+pygame.init()
+clock = pygame.time.Clock() 
+# Create the screen object
+# The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+# Create a custom event for adding a new enemy
+ADDENEMY = pygame.USEREVENT + 1
+pygame.time.set_timer(ADDENEMY, 250)
+ADDPOWERUP = pygame.USEREVENT + 2
+pygame.time.set_timer(ADDPOWERUP, 5000)
+LEVELUP = pygame.USEREVENT + 3
+pygame.time.set_timer(LEVELUP, 10000)
+# Instantiate player. Right now, this is just a rectangle.		
+player = Player()
+scorefile = open("highscore.txt", "r+")
+savescore = scorefile.read()
+player.hiScore = int(savescore)
+#energyBar = Bar(player.energy)
+# Create groups to hold enemy sprites and all sprites
+# - enemies is used for collision detection and position updates
+# - all_sprites is used for rendering
+enemies = pygame.sprite.Group()
+shots = pygame.sprite.Group()
+powerUps = pygame.sprite.Group()
+popUps = pygame.sprite.Group()
+all_sprites = pygame.sprite.Group()
+all_sprites.add(player)
+
+# Variable to keep the main loop running
+running = True
+timehit = 0
+heart = pygame.image.load("heart2.png")
+# Main loop
+
+while running:
+	clock.tick (30)
+	# Look at every event in the queue
+	for event in pygame.event.get():
+		# Did the user hit a key?
+		if event.type == KEYDOWN:
+			# Was it the Escape key? If so, stop the loop.
+			if event.key == K_ESCAPE:
+				running = False
+			if event.key == K_SPACE:
+					if player.energy > 9 :
+						new_Shot = Shot(player.rect.right, player.rect.center[1])
+						shots.add(new_Shot)
+						all_sprites.add(new_Shot)
+						player.energy -=  10
+			if event.key == K_a:
+				if player.phaze == 0:
+					player.phaze = 1
+					for t in shots:
+						t.kill()
+					player.energy = 100
+				elif player.phaze >= 2:
+					player.phaze = 0
+					player.Score = 0
+					player.lives = 3
+					player.level = 0
+					
+		# Did the user click the window close button? If so, stop the loop.
+		
+		
+		
+		elif event.type == QUIT:
+			running = False
+
+		# Add a new enemy?		
+		elif event.type == ADDENEMY:
+			# Create the new enemy and add it to sprite groups
+			if player.phaze == 1:
+				new_enemy = Enemy()
+				enemies.add(new_enemy)
+				all_sprites.add(new_enemy)
+		if event.type == ADDPOWERUP:
+		# Create the new enemy and add it to sprite groups
+			if player.phaze == 1:
+				new_powerUp = powerUp()
+				powerUps.add(new_powerUp)
+				all_sprites.add(new_powerUp)
+		if event.type == LEVELUP:
+			if player.phaze == 1:
+				if player.level < 23:
+					player.level+=1
+				if player.level > 22:
+					player.phaze = 3
+					for enemy in enemies:
+						enemy.kill()
+
+	# Get the set of keys pressed and check for user input
+	pressed_keys = pygame.key.get_pressed()
+
+	# Update enemy position
+	enemies.update()
+	shots.update()
+	powerUps.update()
+	
+	# Update the player sprite based on user keypresses
+	player.update(pressed_keys)
+	Score = str(player.Score)
+	hiScore = str(player.hiScore)
+	# Fill the screen with black	
+	screen.fill((player.level*10, 0, 0))
+	if player.phaze == 0:
+		titleimage = retrotitle.render("SPACESHOT", False, (255,255,255))
+		desimage = retro.render("PRESS A TO START", False, (255,255,255))
+		scoreimage = retro.render("HIGH SCORE: " +hiScore, False, (255,255,255))
+		screen.blit(titleimage, (220, 50))
+		screen.blit(desimage, (245, 100))
+		screen.blit(scoreimage, (215, 550))
+	elif player.phaze == 1:
+		textimage = retro.render("SCORE: " +Score, False, (255,255,255))
+		screen.blit(textimage, (20, 20))
+	elif player.phaze == 2:
+		titleimage = retrotitle.render("GAME OVER", False, (255,255,255))
+		scoreimage = retro.render("SCORE: " +Score, False, (255,255,255))
+		desimage = retro.render("PRESS A TO CONTINUE", False, (255,255,255))
+		screen.blit(titleimage, (220, 50))
+		screen.blit(desimage, (220, 100))
+		screen.blit(scoreimage, (215, 550))
+	elif player.phaze == 3:
+		titleimage = retrotitle.render("YOU WIN", False, (255,255,255))
+		scoreimage = retro.render("SCORE: " +Score, False, (255,255,255))
+		desimage = retro.render("PRESS A TO CONTINUE", False, (255,255,255))
+		screen.blit(titleimage, (270, 50))
+		screen.blit(desimage, (220, 100))
+		screen.blit(scoreimage, (215, 550))
+	# energy bar
+	if player.phaze == 1:
+		pygame.draw.rect(screen, (255, 255, 255), (15, 555, 160,30) )
+		pygame.draw.rect(screen, (255, 225, 225), (15, 555, 50,30) )
+		if player.energy <= 30:
+			pygame.draw.rect(screen, (255, 0, 0), (20, 560, player.energy*1.5,20) )
+		elif player.energy > 30 and player.energy <= 100:
+			pygame.draw.rect(screen, (75, 255, 75), (20, 560, player.energy*1.5,20) )
+		elif player.energy > 100:
+			pygame.draw.rect(screen, (255, 255, 255), (15, 555, player.energy*1.5+10,30) )
+			pygame.draw.rect(screen,(120, 200, 255),(17, 557, player.energy*1.5+6,26))
+			pygame.draw.rect(screen, (255, 255, 75), (20, 560, player.energy*1.5,20))
+	# Draw all sprites
+	player.animatePlayer()
+	for entity in all_sprites:
+		screen.blit(entity.image, entity.rect)
+	# Check if any enemies have collided with the player
+	enemyhit = pygame.sprite.spritecollideany(player, enemies)
+	for item in popUps:
+		item.update()
+		screen.blit(item.textimage, item.rect)
+	if enemyhit:
+		# If so, then remove the player and stop the loop
+		player.die()
+		timehit = pygame.time.get_ticks()
+		player.hurt = True
+		if player.lives == 0:
+			player.phaze = 2
+			if player.hiScore < player.Score:
+				player.hiScore = player.Score
+				scorefile.seek(0)
+				scorefile.truncate()
+				scorefile.write(str(player.hiScore))
+			for enemy in enemies:
+				enemy.kill()
+		enemyhit.kill()
+		
+	powerupcollect = pygame.sprite.spritecollideany(player, powerUps)
+	
+	if powerupcollect:
+		if powerupcollect.type == 1 and player.lives < 5:
+			player.lives += 1
+		elif powerupcollect.type == 1 and player.lives >= 5:
+			player.Score += 1000
+		elif powerupcollect.type == 2:
+			player.energy = 200
+		
+		powerupcollect.kill()
+	enemyshot = pygame.sprite.groupcollide(enemies, shots, True, 
+	True)
+
+	enemyshot = list(enemyshot.keys())
+	if enemyshot:
+		enemyworth = str(enemyshot[0].worth)
+		new_text = popUp(enemyworth, enemyshot[0].rect.x, enemyshot[0].rect.y)
+		popUps.add(new_text)
+		player.Score+=enemyshot[0].worth
+	if pygame.time.get_ticks() - 550 < timehit and pygame.time.get_ticks() - 450 > timehit:
+		player.hurt = False
+	# Draw the player on the screen	
+	screen.blit(player.image, player.rect)
+	if player.phaze == 1:
+		for i in range(player.lives):
+			screen.blit(heart, (SCREEN_WIDTH - (i+1)*33, 10))
+	# Update the display	
+	pygame.display.flip()
+	
